@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 
 import org.apache.ivy.Ivy;
 import org.apache.ivyde.common.ivyfile.IvyFileResourceListener;
+import org.apache.ivyde.eclipse.IvyDEsecurityHelper;
 import org.apache.ivyde.eclipse.cp.IvyClasspathContainer;
 import org.apache.ivyde.eclipse.cp.IvyClasspathContainerHelper;
 import org.apache.ivyde.internal.eclipse.cpcontainer.IvyAttachementManager;
@@ -136,6 +137,13 @@ public class IvyPlugin extends AbstractUIPlugin {
         this.bundleContext = context;
         logInfo("starting IvyDE plugin");
 
+        if (IvyDEsecurityHelper.credentialsInSecureStorage()) {
+            IvyDEsecurityHelper.cpyCredentialsFromSecureToIvyStorage();
+            logInfo("Credentials loaded from secure storage");            
+        }else{
+            logInfo("No credentials stored in secure storage");
+        }
+
         Matcher matcher = IVY_VERSION_PATTERN.matcher(Ivy.getIvyVersion());
         if (matcher.matches()) {
             ivyVersionMajor = Integer.parseInt(matcher.group(1));
@@ -166,8 +174,8 @@ public class IvyPlugin extends AbstractUIPlugin {
                         prefStoreChanged();
                     }
                 } catch (JavaModelException e) {
-                    MessageDialog.openError(IvyPlugin.getDefault().getWorkbench()
-                            .getActiveWorkbenchWindow().getShell(),
+                    MessageDialog.openError(
+                        IvyPlugin.getDefault().getWorkbench().getActiveWorkbenchWindow().getShell(),
                         "Unable to trigger the update the IvyDE classpath containers",
                         e.getMessage());
                 }
@@ -198,8 +206,8 @@ public class IvyPlugin extends AbstractUIPlugin {
         ivyMarkerManager = new IvyMarkerManager();
 
         File stateLocation = getStateLocation().toFile();
-        ivyAttachementManager = new IvyAttachementManager(new File(stateLocation,
-                "attachements.properties"));
+        ivyAttachementManager = new IvyAttachementManager(
+                new File(stateLocation, "attachements.properties"));
         File containersStateDir = new File(stateLocation, "cpstates");
         if (!containersStateDir.exists()) {
             containersStateDir.mkdirs();
@@ -211,8 +219,8 @@ public class IvyPlugin extends AbstractUIPlugin {
             Class.forName("org.apache.ivy.osgi.core.ManifestParser");
             osgiAvailable = true;
             try {
-                Class.forName("org.apache.ivy.osgi.core.BundleInfo").getDeclaredMethod(
-                    "getClasspath");
+                Class.forName("org.apache.ivy.osgi.core.BundleInfo")
+                        .getDeclaredMethod("getClasspath", new Class[]{});
                 osgiClasspathAvailable = true;
             } catch (Exception e) {
                 osgiClasspathAvailable = false;
@@ -221,7 +229,6 @@ public class IvyPlugin extends AbstractUIPlugin {
             osgiAvailable = false;
             osgiClasspathAvailable = false;
         }
-
         logInfo("IvyDE plugin started");
     }
 
@@ -405,7 +412,7 @@ public class IvyPlugin extends AbstractUIPlugin {
      * @return the adapted object
      */
 
-    public static/* <T> T */Object adapt(Object object, Class/* <T> */type) {
+    public static/* <T> T */Object adapt(Object object, Class/* <T> */ type) {
         if (type.isInstance(object)) {
             return /* (T) */object;
         } else if (object instanceof IAdaptable) {
